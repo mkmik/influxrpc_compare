@@ -1,8 +1,8 @@
+mod dump_entries;
 mod entries;
 mod entry;
 mod error;
 mod path;
-mod dump_entries;
 
 use std::{io::stdout, path::PathBuf};
 

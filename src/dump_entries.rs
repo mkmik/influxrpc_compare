@@ -57,17 +57,15 @@ impl DumpEntries {
         };
 
         let mut num_entries = 0;
-        entries
-            .enumerate()
-            .try_for_each(|(i, entry)| {
-                num_entries += 1;
-                match entry {
-                    Ok(entry) => {
-                        writeln!(out, "{:#?}", entry)
-                    },
-                    Err(e) => writeln!(out, "ERROR decoding {}: {}", i, e)
+        entries.enumerate().try_for_each(|(i, entry)| {
+            num_entries += 1;
+            match entry {
+                Ok(entry) => {
+                    writeln!(out, "{:#?}", entry)
                 }
-            })?;
+                Err(e) => writeln!(out, "ERROR decoding {}: {}", i, e),
+            }
+        })?;
 
         println!("Dumped {} entries", num_entries);
         Ok(())
