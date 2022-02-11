@@ -1,8 +1,8 @@
-mod dump;
 mod entries;
 mod entry;
 mod error;
 mod path;
+mod dump_entries;
 
 use std::{io::stdout, path::PathBuf};
 
@@ -14,7 +14,7 @@ use clap::Parser;
 ///
 /// # Example (dump contents of logs in a directory):
 ///
-/// influxrpc_compare dump --path  /path/to/dumps
+/// influxrpc_compare dump-entries --path  /path/to/dumps
 ///
 /// # Reference
 ///
@@ -23,11 +23,12 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
 enum InfluxRpcCompare {
-    Dump(Dump),
+    /// Dump raw log entry files
+    DumpEntries(DumpEntries),
 }
 
 #[derive(Parser, Debug)]
-struct Dump {
+struct DumpEntries {
     #[clap(long, parse(from_os_str))]
     /// Search path for grpc log files
     path: PathBuf,
@@ -37,8 +38,8 @@ fn main() {
     let args = InfluxRpcCompare::parse();
 
     match args {
-        InfluxRpcCompare::Dump(dump) => {
-            dump::Dump::new(dump.path)
+        InfluxRpcCompare::DumpEntries(dump) => {
+            dump_entries::DumpEntries::new(dump.path)
                 .dump(&mut stdout())
                 .expect("Error dumping");
         }

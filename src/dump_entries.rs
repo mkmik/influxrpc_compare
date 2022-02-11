@@ -1,4 +1,4 @@
-//! Dumps grpc logs somewhere
+//! Dumps grpc binary log entries
 
 use std::{
     io::Write,
@@ -7,11 +7,11 @@ use std::{
 
 use crate::{entries::Entries, error::Result, path::RecursiveDirectoryIterator};
 
-pub struct Dump {
+pub struct DumpEntries {
     start_path: PathBuf,
 }
 
-impl Dump {
+impl DumpEntries {
     /// Dumps the raw entry contents in all files in the specified path (and its children)
     pub fn new(start_path: impl Into<PathBuf>) -> Self {
         let start_path = start_path.into();
@@ -56,10 +56,11 @@ impl Dump {
             }
         };
 
+        let mut num_entries = 0;
         entries
             .enumerate()
-            .take(10)
             .try_for_each(|(i, entry)| {
+                num_entries += 1;
                 match entry {
                     Ok(entry) => {
                         writeln!(out, "{:#?}", entry)
@@ -68,6 +69,7 @@ impl Dump {
                 }
             })?;
 
+        println!("Dumped {} entries", num_entries);
         Ok(())
     }
 }
