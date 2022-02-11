@@ -1,8 +1,11 @@
 //! Dumps grpc logs somewhere
 
-use std::{path::{PathBuf, Path}, io::Write};
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+};
 
-use crate::{path::RecursiveDirectoryIterator, error::Result};
+use crate::{entries::Entries, error::Result, path::RecursiveDirectoryIterator};
 
 pub struct Dump {
     start_path: PathBuf,
@@ -13,14 +16,15 @@ impl Dump {
     pub fn new(start_path: impl Into<PathBuf>) -> Self {
         let start_path = start_path.into();
 
-        Self {
-            start_path,
-        }
-
+        Self { start_path }
     }
 
     pub fn dump<W: Write>(&mut self, mut out: W) -> Result<()> {
-        writeln!(out, "Attempt to dump gRPC frames from all .txt files starting at {:?}", self.start_path)?;
+        writeln!(
+            out,
+            "Attempt to dump gRPC frames from all .txt files starting at {:?}",
+            self.start_path
+        )?;
 
         let paths = RecursiveDirectoryIterator::new(self.start_path.clone());
 
@@ -29,7 +33,6 @@ impl Dump {
         }
         Ok(())
     }
-
 
     pub fn dump_path<W: Write>(&self, mut out: W, p: &Path) -> Result<()> {
         //println!("path: {:?}", p);
@@ -42,11 +45,21 @@ impl Dump {
         };
 
         if extension != "txt" {
-            return Ok(())
+            return Ok(());
         }
         println!("Attempting to dump {:?}", p);
+        let entries = match Entries::try_new(p) {
+            Ok(entries) => entries,
+            Err(e) => {
+                println!("Error reading {:?}: {}", p, e);
+                return Ok(());
+            }
+        };
+
+        entries.take(10).for_each(|entry| {
+            println!("Decoded entry: {:?}", entry);
+        });
 
         Ok(())
     }
-
 }

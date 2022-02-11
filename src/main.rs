@@ -1,8 +1,9 @@
 mod dump;
-mod path;
+mod entries;
 mod error;
+mod path;
 
-use std::{path::PathBuf, io::stdout};
+use std::{io::stdout, path::PathBuf};
 
 use clap::Parser;
 
@@ -36,11 +37,11 @@ fn main() {
 
     match args {
         InfluxRpcCompare::Dump(dump) => {
-            dump::Dump::new(dump.path).dump(stdout())
+            dump::Dump::new(dump.path)
+                .dump(stdout())
                 .expect("Error dumping");
         }
     };
 
-
     println!("Done");
- }
+}

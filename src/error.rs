@@ -1,9 +1,8 @@
 use std::fmt::Display;
 
-
 #[derive(Debug, Clone)]
 pub struct Error {
-    msg: String
+    msg: String,
 }
 
 impl Display for Error {
@@ -14,12 +13,16 @@ impl Display for Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-
-impl From<std::io::Error> for Error
-{
+impl From<std::io::Error> for Error {
     fn from(e: std::io::Error) -> Self {
-        Self{
+        Self {
             msg: format!("std::io::Error: {}", e),
         }
+    }
+}
+
+impl From<String> for Error {
+    fn from(msg: String) -> Self {
+        Self { msg }
     }
 }

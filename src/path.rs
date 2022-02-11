@@ -1,20 +1,17 @@
-use std::{path::PathBuf, collections::VecDeque};
-
+use std::{collections::VecDeque, path::PathBuf};
 
 #[derive(Debug)]
 /// Recursively and incrementally walks a directory structure. Is
 /// likely to get confused if the directories change during iteration
 pub struct RecursiveDirectoryIterator {
-    worklist :VecDeque<PathBuf>
+    worklist: VecDeque<PathBuf>,
 }
 
 impl RecursiveDirectoryIterator {
     pub fn new(path: impl Into<PathBuf>) -> Self {
         let mut worklist = VecDeque::new();
         worklist.push_back(path.into());
-        Self {
-            worklist
-        }
+        Self { worklist }
     }
 }
 
@@ -26,12 +23,17 @@ impl Iterator for RecursiveDirectoryIterator {
             let metadata = path.metadata().expect("reading metadata");
 
             if metadata.is_file() {
-                return Some(path)
+                return Some(path);
             } else if metadata.is_dir() {
                 // read entries
-                for entry in std::fs::read_dir(path).expect("reading directory") {
-                    let entry = entry.expect("error reading directory entry");
-                    self.worklist.push_back(entry.path())
+                let mut new_entries: Vec<PathBuf> = std::fs::read_dir(path)
+                    .expect("reading directory")
+                    .map(|entry| entry.expect("error reading directory entry").path())
+                    .collect();
+
+                new_entries.sort_unstable();
+                for entry in new_entries {
+                    self.worklist.push_back(entry)
                 }
             }
         }
