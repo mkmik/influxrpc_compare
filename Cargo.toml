@@ -7,3 +7,9 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "3.0.14", features = ["derive"] }
+binarylog  = { path = "./pbbinarylog" }
+
+[workspace]
+members = [
+    "pbbinarylog",
+]

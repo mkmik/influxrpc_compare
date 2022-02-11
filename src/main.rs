@@ -17,6 +17,7 @@ use clap::Parser;
 /// # Reference
 ///
 /// [logs]: https://github.com/grpc/proposal/blob/master/A16-binary-logging.md
+/// [protobuf]: https://github.com/grpc/grpc-proto/blob/master/grpc/binlog/v1/binarylog.proto
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
 enum InfluxRpcCompare {
