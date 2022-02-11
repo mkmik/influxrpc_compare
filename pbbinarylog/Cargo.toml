@@ -9,6 +9,7 @@ edition = "2021"
 bytes = "1.0"
 prost = "0.9"
 prost-types = "0.9"
+chrono = "0.4.19"
 
 [build-dependencies]
 prost-build = { version = "0.9" }
