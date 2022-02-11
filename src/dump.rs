@@ -12,7 +12,7 @@ pub struct Dump {
 }
 
 impl Dump {
-    /// Dumps contents in all files in the specified path (and its children)
+    /// Dumps the raw entry contents in all files in the specified path (and its children)
     pub fn new(start_path: impl Into<PathBuf>) -> Self {
         let start_path = start_path.into();
 
@@ -57,8 +57,16 @@ impl Dump {
         };
 
         entries
+            .enumerate()
             .take(10)
-            .try_for_each(|entry| writeln!(out, "Decoded entry: {:#?}", entry))?;
+            .try_for_each(|(i, entry)| {
+                match entry {
+                    Ok(entry) => {
+                        writeln!(out, "{:#?}", entry)
+                    },
+                    Err(e) => writeln!(out, "ERROR decoding {}: {}", i, e)
+                }
+            })?;
 
         Ok(())
     }
