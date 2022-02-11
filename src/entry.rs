@@ -7,16 +7,16 @@ use pbbinarylog::{to_chrono_duration, to_chrono_timestamp};
 /// it easier to work (all types are explicit here, not just in IDEs!)
 #[derive(Debug, Clone)]
 pub struct Entry {
-    timestamp: Option<DateTime<Utc>>,
-    call_id: u64,
-    sequence_id_within_call: u64,
-    event_type: EventType,
-    logger: Logger,
-    payload_truncated: bool,
+    pub timestamp: Option<DateTime<Utc>>,
+    pub call_id: u64,
+    pub sequence_id_within_call: u64,
+    pub event_type: EventType,
+    pub logger: Logger,
+    pub payload_truncated: bool,
     // Host address
-    peer: Option<String>,
+    pub peer: Option<String>,
     // The contents of this entry
-    payload: Payload,
+    pub payload: Payload,
 }
 
 #[derive(Debug, Clone)]
@@ -104,7 +104,7 @@ impl Entry {
         let peer = peer.map(|address| format!("{}:{}", address.address, address.ip_port));
 
         Self {
-            timestamp: timestamp.map(|ts| to_chrono_timestamp(ts)),
+            timestamp: timestamp.map(to_chrono_timestamp),
             call_id,
             sequence_id_within_call,
             event_type: event_type.into(),
@@ -171,7 +171,7 @@ impl From<pbbinarylog::ClientHeader> for ClientHeader {
             metadata: to_hashmap(metadata),
             method_name,
             authority,
-            timeout: timeout.map(|d| to_chrono_duration(d)),
+            timeout: timeout.map(to_chrono_duration),
         }
     }
 }
@@ -224,5 +224,5 @@ fn to_hashmap(metadata: Option<pbbinarylog::Metadata>) -> HashMap<String, String
                 })
                 .collect::<HashMap<_, _>>()
         })
-        .unwrap_or_else(|| HashMap::new())
+        .unwrap_or_else(HashMap::new)
 }

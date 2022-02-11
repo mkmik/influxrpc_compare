@@ -68,11 +68,7 @@ impl Iterator for LengthDelimitedRecords {
     type Item = Result<Bytes>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let current_offset = if let Some(c) = self.current_offset.take() {
-            c
-        } else {
-            return None;
-        };
+        let current_offset = self.current_offset.take()?;
 
         // try and read the next 4 bytes as a length
         let remain = self.bytes.len() - current_offset;
