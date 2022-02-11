@@ -2,9 +2,9 @@ use std::path::Path;
 
 use bytes::Bytes;
 
-use crate::error::Result;
+use crate::{entry::Entry, error::Result};
 
-/// module for decoding GrpcLogEntry from files
+/// decode GrpcLogEntry from files
 ///
 /// To use:
 /// ```
@@ -32,12 +32,13 @@ impl Entries {
 }
 
 impl Iterator for Entries {
-    type Item = Result<pbbinarylog::GrpcLogEntry>;
+    type Item = Result<Entry>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.records.next().map(|bytes_result| {
             bytes_result
                 .and_then(|bytes| pbbinarylog::decode_log_entry(bytes).map_err(|e| e.into()))
+                .map(Entry::new)
         })
     }
 }

@@ -1,5 +1,6 @@
 mod dump;
 mod entries;
+mod entry;
 mod error;
 mod path;
 
@@ -38,7 +39,7 @@ fn main() {
     match args {
         InfluxRpcCompare::Dump(dump) => {
             dump::Dump::new(dump.path)
-                .dump(stdout())
+                .dump(&mut stdout())
                 .expect("Error dumping");
         }
     };

@@ -19,7 +19,7 @@ impl Dump {
         Self { start_path }
     }
 
-    pub fn dump<W: Write>(&mut self, mut out: W) -> Result<()> {
+    pub fn dump<W: Write>(&mut self, out: &mut W) -> Result<()> {
         writeln!(
             out,
             "Attempt to dump gRPC frames from all .txt files starting at {:?}",
@@ -29,12 +29,12 @@ impl Dump {
         let paths = RecursiveDirectoryIterator::new(self.start_path.clone());
 
         for p in paths {
-            self.dump_path(&mut out, &p)?;
+            self.dump_path(out, &p)?;
         }
         Ok(())
     }
 
-    pub fn dump_path<W: Write>(&self, mut out: W, p: &Path) -> Result<()> {
+    pub fn dump_path<W: Write>(&self, out: &mut W, p: &Path) -> Result<()> {
         //println!("path: {:?}", p);
 
         // skip anything without extension
@@ -51,14 +51,14 @@ impl Dump {
         let entries = match Entries::try_new(p) {
             Ok(entries) => entries,
             Err(e) => {
-                println!("Error reading {:?}: {}", p, e);
+                writeln!(out, "Error reading {:?}: {}", p, e)?;
                 return Ok(());
             }
         };
 
-        entries.take(10).for_each(|entry| {
-            println!("Decoded entry: {:?}", entry);
-        });
+        entries
+            .take(10)
+            .try_for_each(|entry| writeln!(out, "Decoded entry: {:#?}", entry))?;
 
         Ok(())
     }
