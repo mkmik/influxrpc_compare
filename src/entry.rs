@@ -1,28 +1,91 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, fmt::Debug};
 
-use chrono::{DateTime, Utc};
-use pbbinarylog::to_chrono;
+use chrono::{DateTime, Duration, Utc};
+use pbbinarylog::{to_chrono_duration, to_chrono_timestamp};
 
 /// Native rust version of decoded [pbbinarylog::GrpcLogEntry] to make
 /// it easier to work (all types are explicit here, not just in IDEs!)
 #[derive(Debug, Clone)]
 pub struct Entry {
-    timestamp: DateTime<Utc>,
+    timestamp: Option<DateTime<Utc>>,
     call_id: u64,
     sequence_id_within_call: u64,
     event_type: EventType,
     logger: Logger,
     payload_truncated: bool,
     // Host address
-    peer: String,
+    peer: Option<String>,
     // The contents of this entry
     payload: Payload,
 }
 
+#[derive(Debug, Clone)]
+pub enum EventType {
+    Unknown,
+    ClientHeader,
+    ServerHeader,
+    ClientMessage,
+    ServerMessage,
+    ClientHalfClose,
+    ServerTrailer,
+    Cancel,
+}
+
+#[derive(Debug, Clone)]
+pub enum Logger {
+    Unknown,
+    Client,
+    Server,
+}
+
+#[derive(Debug, Clone)]
+pub enum Payload {
+    ClientHeader(ClientHeader),
+    ServerHeader(ServerHeader),
+    Message(Message),
+    Trailer(Trailer),
+}
+
+#[derive(Debug, Clone)]
+pub struct ClientHeader {
+    pub metadata: HashMap<String, String>,
+    pub method_name: String,
+    pub authority: String,
+    pub timeout: Option<Duration>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ServerHeader {
+    pub metadata: HashMap<String, String>,
+}
+
+#[derive(Clone)]
+pub struct Message {
+    pub length: u32,
+    // raw encoded data (needs to be decoded)
+    pub data: Vec<u8>,
+}
+
+impl Debug for Message {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Message")
+            .field("length", &self.length)
+            .field("data", &format!("<..{} bytes..>", self.data.len()))
+            .finish()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Trailer {
+    pub metadata: HashMap<String, String>,
+    pub status_code: u32,
+    pub status_message: String,
+    pub status_details: Vec<u8>,
+}
+
 impl Entry {
-    // TODO make some real timestamps
     pub fn new(inner: pbbinarylog::GrpcLogEntry) -> Self {
-        println!("Converting {:#?}\n", inner);
+        //println!("Converting {:#?}\n", inner);
 
         let event_type = inner.r#type();
         let logger = inner.logger();
@@ -38,12 +101,10 @@ impl Entry {
             payload,
         } = inner;
 
-        let peer = peer
-            .map(|address| format!("{}:{}", address.address, address.ip_port))
-            .unwrap_or_else(|| "UNKNOWN".to_string());
+        let peer = peer.map(|address| format!("{}:{}", address.address, address.ip_port));
 
         Self {
-            timestamp: to_chrono(timestamp),
+            timestamp: timestamp.map(|ts| to_chrono_timestamp(ts)),
             call_id,
             sequence_id_within_call,
             event_type: event_type.into(),
@@ -55,17 +116,7 @@ impl Entry {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum EventType {
-    Unknown,
-    ClientHeader,
-    ServerHeader,
-    ClientMessage,
-    ServerMessage,
-    ClientHalfClose,
-    ServerTrailer,
-    Cancel,
-}
+// Begin prost conversion goo
 
 impl From<pbbinarylog::grpc_log_entry::EventType> for EventType {
     fn from(event_type: pbbinarylog::grpc_log_entry::EventType) -> Self {
@@ -82,13 +133,6 @@ impl From<pbbinarylog::grpc_log_entry::EventType> for EventType {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum Logger {
-    Unknown,
-    Client,
-    Server,
-}
-
 impl From<pbbinarylog::grpc_log_entry::Logger> for Logger {
     fn from(logger: pbbinarylog::grpc_log_entry::Logger) -> Logger {
         match logger {
@@ -99,43 +143,86 @@ impl From<pbbinarylog::grpc_log_entry::Logger> for Logger {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum Payload {
-    ClientHeader(ClientHeader),
-    ServerHeader(ServerHeader),
-    Message(Message),
-    Trailer(Trailer),
-}
-
 impl From<pbbinarylog::grpc_log_entry::Payload> for Payload {
     fn from(payload: pbbinarylog::grpc_log_entry::Payload) -> Self {
-        todo!()
+        match payload {
+            pbbinarylog::grpc_log_entry::Payload::ClientHeader(p) => {
+                Payload::ClientHeader(p.into())
+            }
+            pbbinarylog::grpc_log_entry::Payload::ServerHeader(p) => {
+                Payload::ServerHeader(p.into())
+            }
+            pbbinarylog::grpc_log_entry::Payload::Message(p) => Payload::Message(p.into()),
+            pbbinarylog::grpc_log_entry::Payload::Trailer(p) => Payload::Trailer(p.into()),
+        }
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct ClientHeader {
-    pub metadata: HashMap<String, String>,
-    pub method_name: String,
-    pub authority: String,
-    pub timeout: Option<Duration>,
+impl From<pbbinarylog::ClientHeader> for ClientHeader {
+    fn from(header: pbbinarylog::ClientHeader) -> Self {
+        let pbbinarylog::ClientHeader {
+            metadata,
+            method_name,
+            authority,
+            timeout,
+        } = header;
+
+        ClientHeader {
+            metadata: to_hashmap(metadata),
+            method_name,
+            authority,
+            timeout: timeout.map(|d| to_chrono_duration(d)),
+        }
+    }
 }
 
-#[derive(Debug, Clone)]
-pub struct ServerHeader {
-    pub metadata: HashMap<String, String>,
+impl From<pbbinarylog::ServerHeader> for ServerHeader {
+    fn from(header: pbbinarylog::ServerHeader) -> Self {
+        let pbbinarylog::ServerHeader { metadata } = header;
+        ServerHeader {
+            metadata: to_hashmap(metadata),
+        }
+    }
 }
 
-#[derive(Debug, Clone)]
-pub struct Message {
-    pub length: u32,
-    pub data: Vec<u8>,
+impl From<pbbinarylog::Message> for Message {
+    fn from(message: pbbinarylog::Message) -> Self {
+        let pbbinarylog::Message { length, data } = message;
+
+        Message { length, data }
+    }
 }
 
-#[derive(Debug, Clone)]
-pub struct Trailer {
-    pub metadata: HashMap<String, String>,
-    pub status_code: u32,
-    pub status_message: String,
-    pub status_details: Vec<u8>,
+impl From<pbbinarylog::Trailer> for Trailer {
+    fn from(trailer: pbbinarylog::Trailer) -> Self {
+        let pbbinarylog::Trailer {
+            metadata,
+            status_code,
+            status_message,
+            status_details,
+        } = trailer;
+        Trailer {
+            metadata: to_hashmap(metadata),
+            status_code,
+            status_message,
+            status_details,
+        }
+    }
+}
+
+fn to_hashmap(metadata: Option<pbbinarylog::Metadata>) -> HashMap<String, String> {
+    metadata
+        .map(|metadata| {
+            metadata
+                .entry
+                .into_iter()
+                .map(|entry| {
+                    (
+                        entry.key,
+                        String::from_utf8(entry.value).expect("non utf8 header value"),
+                    )
+                })
+                .collect::<HashMap<_, _>>()
+        })
+        .unwrap_or_else(|| HashMap::new())
 }
