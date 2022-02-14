@@ -50,6 +50,7 @@ pub enum Payload {
 pub struct ClientHeader {
     pub metadata: HashMap<String, String>,
     pub method_name: String,
+    /// hostname of the client making the request
     pub authority: String,
     pub timeout: Option<Duration>,
 }

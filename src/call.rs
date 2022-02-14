@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 
 /// Represents a logical gRPC call extracted from a chain of Entrys
@@ -20,6 +22,12 @@ pub struct Call {
 
     /// Other end of the request
     peer: Option<String>,
+
+    /// Headers sent from Client
+    client_headers: HashMap<String, String>,
+
+    /// Headers sent from Server
+    server_headers: HashMap<String, String>,
 }
 
 impl Call {
@@ -31,7 +39,7 @@ impl Call {
     }
 
     /// Note that a timestamp occured as part of this call
-    pub fn timestamp(&mut self, timestamp: Option<DateTime<Utc>>) -> &mut Self {
+    pub fn with_timestamp(&mut self, timestamp: Option<DateTime<Utc>>) -> &mut Self {
         if let Some(timestamp) = timestamp {
             self.start_time = self
                 .start_time
@@ -48,7 +56,7 @@ impl Call {
         self
     }
 
-    pub fn peer(&mut self, peer: Option<String>) -> &mut Self {
+    pub fn with_peer(&mut self, peer: Option<String>) -> &mut Self {
         if let Some(peer) = peer {
             self.peer = self
                 .peer
@@ -60,6 +68,46 @@ impl Call {
                 .or_else(|| Some(peer));
         }
 
+        self
+    }
+
+    pub fn with_method_name(&mut self, method_name: String) -> &mut Self {
+        self.method_name = self
+            .method_name
+            .take()
+            .map(|existing_method_name| {
+                assert_eq!(
+                    existing_method_name, method_name,
+                    "Unexpectedly different method_name in log"
+                );
+                existing_method_name
+            })
+            .or_else(|| Some(method_name));
+
+        self
+    }
+
+    pub fn with_client_headers(&mut self, headers: HashMap<String, String>) -> &mut Self {
+        for (name, value) in headers {
+            let existing_header = self.client_headers.insert(name, value);
+            assert!(
+                existing_header.is_none(),
+                "duplicated client header: {:?}",
+                existing_header
+            );
+        }
+        self
+    }
+
+    pub fn with_server_headers(&mut self, headers: HashMap<String, String>) -> &mut Self {
+        for (name, value) in headers {
+            let existing_header = self.server_headers.insert(name, value);
+            assert!(
+                existing_header.is_none(),
+                "duplicated server header: {:?}",
+                existing_header
+            );
+        }
         self
     }
 }
