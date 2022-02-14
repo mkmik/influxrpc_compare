@@ -77,7 +77,27 @@ impl DumpCalls {
         }
 
         // full debug dump
-        writeln!(out, "\n\n{:#?}", calls)?;
+        writeln!(out, "\n\n***************** DEBUG *************\n\n")?;
+
+        for call in calls.iter() {
+            if call
+                .status_code
+                .as_ref()
+                .map(|status_code| *status_code != 0)
+                .unwrap_or(false)
+            {
+                writeln!(out, "Error call: {}", call)?;
+            }
+
+            if call
+                .method_name
+                .as_ref()
+                .map(|method_name| method_name != "/influxdata.platform.storage.Storage/Offsets")
+                .unwrap_or(false)
+            {
+                writeln!(out, "Non storage offset call:\n  {}", call)?;
+            }
+        }
 
         Ok(())
     }

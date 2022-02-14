@@ -7,39 +7,40 @@ use chrono::{DateTime, Utc};
 ///
 #[derive(Default, Debug, Clone)]
 pub struct Call {
-    id: u64,
-    /// source/target
-    /// start and end timestamp
-    /// headers
+    pub id: u64,
+
     /// gRPR method name
-    method_name: Option<String>,
+    pub method_name: Option<String>,
 
     /// first observed timestamp of this call
-    start_time: Option<DateTime<Utc>>,
+    pub start_time: Option<DateTime<Utc>>,
 
     /// last observed timestamp of this call
-    end_time: Option<DateTime<Utc>>,
+    pub end_time: Option<DateTime<Utc>>,
 
     /// Other end of the request
-    peer: Option<String>,
+    pub peer: Option<String>,
+
+    /// authority (client dns name)
+    pub authority: Option<String>,
 
     /// Headers sent from Client
-    client_headers: HashMap<String, String>,
+    pub client_headers: HashMap<String, String>,
 
     /// Headers sent from Server
-    server_headers: HashMap<String, String>,
+    pub server_headers: HashMap<String, String>,
 
     /// Response code
-    status_code: Option<u32>,
+    pub status_code: Option<u32>,
 
     /// Response message
-    status_message: Option<String>,
+    pub status_message: Option<String>,
 
     /// Response details (decoded as string)
-    status_details: Option<String>,
+    pub status_details: Option<String>,
 
     /// Trailer metadata
-    status_metadata: HashMap<String, String>,
+    pub status_metadata: HashMap<String, String>,
 }
 
 impl Display for Call {
@@ -53,9 +54,9 @@ impl Display for Call {
         };
 
         if let Some(end_time) = &self.end_time {
-            write!(f, "{}]", end_time)?;
+            write!(f, "{}", end_time)?;
         } else {
-            write!(f, "{}]]", "??")?;
+            write!(f, "{}", "??")?;
         };
 
         write!(f, "]")?;
@@ -63,6 +64,19 @@ impl Display for Call {
         if let Some(method_name) = &self.method_name {
             write!(f, " {}", method_name)?;
         }
+
+        write!(
+            f,
+            " {} --> {}",
+            self.authority
+                .as_ref()
+                .map(|s| s.as_str())
+                .unwrap_or("<UNKNOWN>"),
+            self.peer
+                .as_ref()
+                .map(|s| s.as_str())
+                .unwrap_or("<UNKNOWN>")
+        )?;
 
         Ok(())
     }
@@ -110,18 +124,22 @@ impl Call {
     }
 
     pub fn with_method_name(&mut self, method_name: String) -> &mut Self {
-        self.method_name = self
-            .method_name
-            .take()
-            .map(|existing_method_name| {
-                assert_eq!(
-                    existing_method_name, method_name,
-                    "Unexpectedly different method_name in log"
-                );
-                existing_method_name
-            })
-            .or_else(|| Some(method_name));
+        assert!(
+            self.method_name.is_none(),
+            "Already have method name: {:?}",
+            self.method_name
+        );
+        self.method_name = Some(method_name);
+        self
+    }
 
+    pub fn with_authority(&mut self, authority: String) -> &mut Self {
+        assert!(
+            self.authority.is_none(),
+            "Already have authority name: {:?}",
+            self.authority
+        );
+        self.authority = Some(authority);
         self
     }
 

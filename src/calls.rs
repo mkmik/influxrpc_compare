@@ -60,15 +60,16 @@ impl<A: Into<Entry>> FromIterator<A> for Calls {
                         .with_timestamp(timestamp)
                         .with_peer(peer);
 
-                    let call = match payload {
+                    match payload {
                         Payload::ClientHeader(client_header) => {
                             let ClientHeader {
                                 metadata,
                                 method_name,
-                                authority: _,
+                                authority,
                                 timeout: _,
                             } = client_header;
                             call.with_method_name(method_name)
+                                .with_authority(authority)
                                 .with_client_headers(metadata)
                         }
                         Payload::ServerHeader(server_header) => {
