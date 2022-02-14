@@ -26,10 +26,20 @@ use clap::Parser;
 enum InfluxRpcCompare {
     /// Dump raw log entry files
     DumpEntries(DumpEntries),
+    /// Dump gRPC calls (reconstructed from log entry files)
+    DumpCalls(DumpCalls),
 }
 
 #[derive(Parser, Debug)]
 struct DumpEntries {
+    #[clap(long, parse(from_os_str))]
+    /// Search path for grpc log files
+    path: PathBuf,
+}
+
+
+#[derive(Parser, Debug)]
+struct DumpCalls {
     #[clap(long, parse(from_os_str))]
     /// Search path for grpc log files
     path: PathBuf,
@@ -42,7 +52,12 @@ fn main() {
         InfluxRpcCompare::DumpEntries(dump) => {
             dump_entries::DumpEntries::new(dump.path)
                 .dump(&mut stdout())
-                .expect("Error dumping");
+                .expect("Error dumping entries");
+        }
+        InfluxRpcCompare::DumpCalls(dump) => {
+            dump_calls::DumpCalls::new(dump.path)
+                .dump(&mut stdout())
+                .expect("Error dumping calls");
         }
     };
 

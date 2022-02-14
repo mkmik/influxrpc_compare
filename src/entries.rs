@@ -104,6 +104,14 @@ impl Iterator for LengthDelimitedRecords {
         }
 
         let next_offset = current_offset + record_len;
+        if next_offset > (self.bytes.len() - 1) {
+            return Some(Err(format!(
+                "Next offset {} is past end of file {}",
+                next_offset, self.bytes.len() -1
+            )
+                            .into()));
+        }
+
         let record = self.bytes.slice(current_offset..next_offset);
         self.current_offset = Some(next_offset);
         //println!("Next offset: {:?}", self.current_offset);

@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{entries::Entries, error::Result, path::{RecursiveDirectoryIterator, LogIterator}};
+use crate::{entries::Entries, error::Result, path::LogIterator};
 
 pub struct DumpEntries {
     start_path: PathBuf,

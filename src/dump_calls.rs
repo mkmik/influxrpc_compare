@@ -1,11 +1,11 @@
-//! Dumps summarized gRPC calls
+//! Dumps summarized gRPC calls (summarized entries)
 
 use std::{
     io::Write,
-    path::{Path, PathBuf},
+    path::{Path, PathBuf}, time::Instant,
 };
 
-use crate::{entries::Entries, error::Result, path::RecursiveDirectoryIterator};
+use crate::{entries::Entries, error::Result, path::LogIterator};
 
 pub struct DumpCalls {
     start_path: PathBuf,
@@ -22,11 +22,11 @@ impl DumpCalls {
     pub fn dump<W: Write>(&mut self, out: &mut W) -> Result<()> {
         writeln!(
             out,
-            "Attempt to dump gRPC calls from all .txt files starting at {:?}",
+            "Attempt to dump gRPC frames from all .txt files starting at {:?}",
             self.start_path
         )?;
 
-        let paths = RecursiveDirectoryIterator::new(self.start_path.clone());
+        let paths = LogIterator::new(self.start_path.clone());
 
         for p in paths {
             self.dump_path(out, &p)?;
@@ -36,18 +36,8 @@ impl DumpCalls {
 
     pub fn dump_path<W: Write>(&self, out: &mut W, p: &Path) -> Result<()> {
         //println!("path: {:?}", p);
-
-        // skip anything without extension
-        let extension = if let Some(extension) = p.extension() {
-            extension.to_string_lossy()
-        } else {
-            return Ok(());
-        };
-
-        if extension != "txt" {
-            return Ok(());
-        }
         println!("Attempting to dump {:?}", p);
+
         let entries = match Entries::try_new(p) {
             Ok(entries) => entries,
             Err(e) => {
@@ -56,18 +46,24 @@ impl DumpCalls {
             }
         };
 
-        let mut num_entries = 0;
-        entries.enumerate().try_for_each(|(i, entry)| {
-            num_entries += 1;
-            match entry {
-                Ok(entry) => {
-                    writeln!(out, "{:#?}", entry)
-                }
-                Err(e) => writeln!(out, "ERROR decoding {}: {}", i, e),
-            }
-        })?;
+        let start = Instant::now();
 
-        println!("Dumped {} entries", num_entries);
+        // split them into Ok and Errors
+        let (ok_entries, err_entries): (Vec<_>, Vec<_>) = entries
+            .map(|result| {
+                match result {
+                    Ok(entry) => (Some(entry), None),
+                    Err(msg) => (None, Some(msg)),
+                }
+            })
+            .unzip();
+
+        let ok_entries: Vec<_> = ok_entries.into_iter().filter_map(|s| s).collect();
+        let err_entries: Vec<_> = err_entries.into_iter().filter_map(|s| s).collect();
+
+
+        println!("Read {} ok entries and {} err entries in {:?}",
+                 ok_entries.len(), err_entries.len(), Instant::now() - start);
         Ok(())
     }
 }
