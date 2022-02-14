@@ -1,4 +1,6 @@
-use crate::{call::Call, entry::Entry};
+use std::collections::BTreeMap;
+
+use crate::{call::{Call, CallBuilder}, entry::Entry};
 
 /// Group `Entries` into logical gRPC calls
 ///
@@ -23,7 +25,26 @@ impl Calls {
 
 impl <A: Into<Entry>> FromIterator<A> for Calls {
     fn from_iter<T: IntoIterator<Item = A>>(iter: T) -> Self {
-        let calls = Vec::new();
-        Self { calls }
+
+        let builders = iter
+            .into_iter()
+            .fold(BTreeMap::<u64, CallBuilder>::new(), |mut builders, entry| {
+                let entry = entry.into();
+                let builder = builders.entry(entry.call_id)
+                    .or_insert_with(|| CallBuilder::new(entry.call_id));
+
+                // update based on the type of entry
+                // match entry {
+
+                // };
+
+                builders
+            });
+
+        let calls = builders.into_values().map(|b| b.build()).collect();
+
+        Self {
+            calls
+        }
     }
 }

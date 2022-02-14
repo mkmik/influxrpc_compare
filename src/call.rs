@@ -1,5 +1,3 @@
-use crate::error::Result;
-
 /// Represents a logical gRPC call extracted from a chain of Entrys
 ///
 ///
@@ -23,12 +21,12 @@ impl CallBuilder {
         Self { id }
     }
 
-    pub fn try_build(self) -> Result<Call> {
+    pub fn build(self) -> Call {
         let Self { id } = self;
 
-        Ok(Call {
+        Call {
             id,
             method_name: "UNKNOWN".to_string(),
-        })
+        }
     }
 }
