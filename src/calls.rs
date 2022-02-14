@@ -1,4 +1,4 @@
-use crate::{call::Call, entry::Entry, error::Result};
+use crate::{call::Call, entry::Entry};
 
 /// Group `Entries` into logical gRPC calls
 ///
@@ -9,16 +9,21 @@ use crate::{call::Call, entry::Entry, error::Result};
 ///   // do awesome stuff
 /// }
 /// ```
+#[derive(Debug, Clone)]
 pub struct Calls {
     /// Calls that are build from the overall records
     calls: Vec<Call>,
-
-    /// Records which could not be handled
-    errors: Vec<String>,
 }
 
-impl<A: Into<Result<Entry>>> FromIterator<A> for Calls {
+impl Calls {
+    pub fn len(&self) -> usize {
+        self.calls.len()
+    }
+}
+
+impl <A: Into<Entry>> FromIterator<A> for Calls {
     fn from_iter<T: IntoIterator<Item = A>>(iter: T) -> Self {
-        todo!()
+        let calls = Vec::new();
+        Self { calls }
     }
 }

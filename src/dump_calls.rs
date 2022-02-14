@@ -6,7 +6,7 @@ use std::{
     time::Instant,
 };
 
-use crate::{entries::Entries, error::Result, path::LogIterator};
+use crate::{entries::Entries, error::Result, path::LogIterator, calls::Calls};
 
 pub struct DumpCalls {
     start_path: PathBuf,
@@ -66,6 +66,11 @@ impl DumpCalls {
             err_entries.len(),
             Instant::now() - start
         );
+
+        // collect into calls
+        let calls: Calls = ok_entries.into_iter().collect();
+        println!("Calls ({}) are:\n{:#?}", calls.len(), calls);
+
         Ok(())
     }
 }

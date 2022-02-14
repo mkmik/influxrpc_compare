@@ -3,6 +3,7 @@ use crate::error::Result;
 /// Represents a logical gRPC call extracted from a chain of Entrys
 ///
 ///
+#[derive(Debug, Clone)]
 pub struct Call {
     id: u64,
     /// source/target
