@@ -2,6 +2,8 @@ use std::{collections::HashMap, fmt::Display};
 
 use chrono::{DateTime, Utc};
 
+use crate::methods::Method;
+
 /// Represents a logical gRPC call extracted from a chain of Entrys
 ///
 ///
@@ -11,6 +13,9 @@ pub struct Call {
 
     /// gRPR method name
     pub method_name: Option<String>,
+
+    /// Decoded gRPC method
+    pub method: Option<Method>,
 
     /// first observed timestamp of this call
     pub start_time: Option<DateTime<Utc>>,
@@ -130,6 +135,31 @@ impl Call {
             self.method_name
         );
         self.method_name = Some(method_name);
+        self
+    }
+
+    pub fn with_method_data(&mut self, method_data: Vec<u8>) -> &mut Self {
+        if method_data.len() == 0 {
+            return self
+        }
+
+        println!("{}: {:?} saw {} bytes of method_data", self.id, self.method_name, method_data.len());
+
+
+        assert!(
+            self.method.is_none(),
+            "Already have method data: {:?}",
+            self.method
+        );
+
+        self.method = if let Some(method_name) = &self.method_name {
+            Some(Method::new(method_name, method_data))
+        }
+        else {
+            // could be smarter here and postpone decoding if method_name hasn't been seen yet
+            panic!("Got method data before method_name, so don't know how to decode it");
+        };
+
         self
     }
 

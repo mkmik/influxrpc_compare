@@ -6,6 +6,7 @@ mod entries;
 mod entry;
 mod error;
 mod path;
+mod methods;
 
 use std::{io::stdout, path::PathBuf};
 

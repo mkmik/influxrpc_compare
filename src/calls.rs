@@ -79,7 +79,8 @@ impl<A: Into<Entry>> FromIterator<A> for Calls {
                         }
                         Payload::Message(message) => {
                             let Message { length, data } = message;
-                            call
+                            assert_eq!(length as usize, data.len(), "mismatched data length");
+                            call.with_method_data(data)
                         }
                         Payload::Trailer(trailer) => {
                             let Trailer {
