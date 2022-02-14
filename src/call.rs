@@ -17,6 +17,9 @@ pub struct Call {
 
     /// last observed timestamp of this call
     end_time: Option<DateTime<Utc>>,
+
+    /// Other end of the request
+    peer: Option<String>,
 }
 
 impl Call {
@@ -42,6 +45,21 @@ impl Call {
                 .map(|ts| ts.max(timestamp))
                 .or_else(|| Some(timestamp));
         }
+        self
+    }
+
+    pub fn peer(&mut self, peer: Option<String>) -> &mut Self {
+        if let Some(peer) = peer {
+            self.peer = self
+                .peer
+                .take()
+                .map(|existing_peer| {
+                    assert_eq!(existing_peer, peer, "Unexpectedly different peer in log");
+                    existing_peer
+                })
+                .or_else(|| Some(peer));
+        }
+
         self
     }
 }
