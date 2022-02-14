@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use chrono::{DateTime, Utc};
 
-use crate::methods::Method;
+use crate::methods::{Method, MethodType};
 
 /// Represents a logical gRPC call extracted from a chain of Entrys
 ///
@@ -14,8 +14,11 @@ pub struct Call {
     /// gRPR method name
     pub method_name: Option<String>,
 
-    /// Decoded gRPC method
-    pub method: Option<Method>,
+    /// decoded gRPC request message (depends on method_name)
+    pub request: Option<Method>,
+
+    /// decoded gRPC response message (depends on method_name)
+    pub response: Option<Method>,
 
     /// first observed timestamp of this call
     pub start_time: Option<DateTime<Utc>>,
@@ -138,28 +141,39 @@ impl Call {
         self
     }
 
-    pub fn with_method_data(&mut self, method_data: Vec<u8>) -> &mut Self {
-        if method_data.len() == 0 {
-            return self
-        }
-
-        println!("{}: {:?} saw {} bytes of method_data", self.id, self.method_name, method_data.len());
-
-
+    pub fn with_request_data(&mut self, method_data: Vec<u8>) -> &mut Self {
         assert!(
-            self.method.is_none(),
-            "Already have method data: {:?}",
-            self.method
+            self.request.is_none(),
+            "Already have request: {:?}",
+            self.request
         );
 
-        self.method = if let Some(method_name) = &self.method_name {
-            Some(Method::new(method_name, method_data))
-        }
-        else {
+        let method = if let Some(method_name) = &self.method_name {
+            Method::new(method_name, method_data, MethodType::Request)
+        } else {
             // could be smarter here and postpone decoding if method_name hasn't been seen yet
             panic!("Got method data before method_name, so don't know how to decode it");
         };
 
+        self.request = Some(method);
+        self
+    }
+
+    pub fn with_response_data(&mut self, method_data: Vec<u8>) -> &mut Self {
+        assert!(
+            self.response.is_none(),
+            "Already have response: {:?}",
+            self.response
+        );
+
+        let method = if let Some(method_name) = &self.method_name {
+            Method::new(method_name, method_data, MethodType::Response)
+        } else {
+            // could be smarter here and postpone decoding if method_name hasn't been seen yet
+            panic!("Got method data before method_name, so don't know how to decode it");
+        };
+
+        self.response = Some(method);
         self
     }
 

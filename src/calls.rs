@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::{
     call::Call,
-    entry::{ClientHeader, Entry, Logger, Message, Payload, ServerHeader, Trailer},
+    entry::{ClientHeader, Entry, EventType, Logger, Message, Payload, ServerHeader, Trailer},
 };
 
 /// Group `Entries` into logical gRPC calls
@@ -41,7 +41,7 @@ impl<A: Into<Entry>> FromIterator<A> for Calls {
                         timestamp,
                         call_id,
                         sequence_id_within_call: _,
-                        event_type: _,
+                        event_type,
                         logger,
                         payload_truncated,
                         peer,
@@ -80,7 +80,11 @@ impl<A: Into<Entry>> FromIterator<A> for Calls {
                         Payload::Message(message) => {
                             let Message { length, data } = message;
                             assert_eq!(length as usize, data.len(), "mismatched data length");
-                            call.with_method_data(data)
+                            match event_type {
+                                EventType::ClientMessage => call.with_request_data(data),
+                                EventType::ServerMessage => call.with_response_data(data),
+                                _ => panic!("Unexpected payload in event type {:?}", event_type),
+                            }
                         }
                         Payload::Trailer(trailer) => {
                             let Trailer {
