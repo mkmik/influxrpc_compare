@@ -60,16 +60,24 @@ impl DumpCalls {
         let ok_entries: Vec<_> = ok_entries.into_iter().filter_map(|s| s).collect();
         let err_entries: Vec<_> = err_entries.into_iter().filter_map(|s| s).collect();
 
-        println!(
+        write!(
+            out,
             "Read {} ok entries and {} err entries in {:?}",
             ok_entries.len(),
             err_entries.len(),
             Instant::now() - start
-        );
+        )?;
 
         // collect into calls
         let calls: Calls = ok_entries.into_iter().collect();
-        println!("Calls ({}) are:\n{:#?}", calls.len(), calls);
+        writeln!(out, "Found {} calls", calls.len())?;
+
+        for call in calls.iter() {
+            writeln!(out, "{}", call)?;
+        }
+
+        // full debug dump
+        writeln!(out, "\n\n{:#?}", calls)?;
 
         Ok(())
     }

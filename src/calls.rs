@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::{
     call::Call,
-    entry::{Entry, Logger, Payload},
+    entry::{ClientHeader, Entry, Logger, Message, Payload, ServerHeader, Trailer},
 };
 
 /// Group `Entries` into logical gRPC calls
@@ -23,6 +23,10 @@ pub struct Calls {
 impl Calls {
     pub fn len(&self) -> usize {
         self.calls.len()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Call> {
+        self.calls.iter()
     }
 }
 
@@ -57,14 +61,39 @@ impl<A: Into<Entry>> FromIterator<A> for Calls {
                         .with_peer(peer);
 
                     let call = match payload {
-                        Payload::ClientHeader(client_headers) => call
-                            .with_method_name(client_headers.method_name)
-                            .with_client_headers(client_headers.metadata),
-                        Payload::ServerHeader(server_headers) => {
-                            call.with_server_headers(server_headers.metadata)
+                        Payload::ClientHeader(client_header) => {
+                            let ClientHeader {
+                                metadata,
+                                method_name,
+                                authority: _,
+                                timeout: _,
+                            } = client_header;
+                            call.with_method_name(method_name)
+                                .with_client_headers(metadata)
                         }
-                        Payload::Message(_msg) => call,
-                        Payload::Trailer(_trailer) => call,
+                        Payload::ServerHeader(server_header) => {
+                            let ServerHeader { metadata } = server_header;
+
+                            call.with_server_headers(metadata)
+                        }
+                        Payload::Message(message) => {
+                            let Message { length, data } = message;
+                            call
+                        }
+                        Payload::Trailer(trailer) => {
+                            let Trailer {
+                                metadata,
+                                status_code,
+                                status_message,
+                                status_details,
+                            } = trailer;
+                            let status_details =
+                                String::from_utf8(status_details).expect("details not string");
+                            call.with_status_metadata(metadata)
+                                .with_status_code(status_code)
+                                .with_status_message(status_message)
+                                .with_status_details(status_details)
+                        }
                     };
 
                     //println!("Call after build: {:?}", call);
