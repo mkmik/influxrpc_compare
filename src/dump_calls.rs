@@ -74,6 +74,8 @@ impl DumpCalls {
 
         for call in calls.iter() {
             writeln!(out, "{}", call)?;
+            //writeln!(out, "  request: {:?}", call.request)?;
+            //writeln!(out, "  response: {:?}", call.response)?;
         }
 
         // full debug dump
@@ -96,6 +98,8 @@ impl DumpCalls {
                 .unwrap_or(false)
             {
                 writeln!(out, "Non storage offset call:\n  {}", call)?;
+                writeln!(out, "  request: {:?}", call.request)?;
+                writeln!(out, "  response: {:?}", call.response)?;
             }
         }
 

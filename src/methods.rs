@@ -1,6 +1,7 @@
 use bytes::Bytes;
 use generated_types::influxdata::platform::storage::{
-    CapabilitiesResponse, OffsetsResponse, ReadResponse, ReadWindowAggregateRequest,
+    CapabilitiesResponse, OffsetsResponse, ReadResponse, TagKeysRequest, ReadWindowAggregateRequest,
+    StringValuesResponse, TagValuesRequest
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -17,6 +18,13 @@ pub enum Method {
     StorageOffsetsRequest(Bytes),
     StorageOffsetsResponse(OffsetsResponse),
 
+    /// `/influxdata.platform.storage.Storage/TagKeys`
+    TagKeysRequest(TagKeysRequest),
+
+    /// /influxdata.platform.storage.Storage/TagValues
+    TagValuesRequest(TagValuesRequest),
+
+
     /// Request: `/influxdata.platform.storage.Storage/Capabilities`
     CapabilitiesRequest(),
     /// Response: `/influxdata.platform.storage.Storage/Capabilities`
@@ -25,8 +33,15 @@ pub enum Method {
     /// Request `/influxdata.platform.storage.Storage/ReadWindowAggregate`
     ReadWindowAggregateRequest(ReadWindowAggregateRequest),
 
-    /// Response `/influxdata.platform.storage.Storage/ReadWindowAggregate`
+    /// Response for:
+    /// `/influxdata.platform.storage.Storage/ReadWindowAggregate`
     ReadResponse(ReadResponse),
+
+    /// Response for:
+    /// * `/influxdata.platform.storage.Storage/TagKeys`
+    /// * `/influxdata.platform.storage.Storage/TagValues`
+    StringValuesResponse(StringValuesResponse),
+
 
     /// a gRPC Method we don't (yet) know how to decode
     Unknown {
@@ -48,7 +63,7 @@ impl Method {
             ("/influxdata.platform.storage.Storage/Offsets", Request) => {
                 Self::StorageOffsetsRequest(bytes)
             }
-            ("/influxdata.platform.storage.Storage/Offsets", Resonse) => {
+            ("/influxdata.platform.storage.Storage/Offsets", Response) => {
                 let msg = OffsetsResponse::decode(bytes).expect("Error decoding OffsetsResponse");
                 Self::StorageOffsetsResponse(msg)
             }
@@ -64,6 +79,21 @@ impl Method {
                     .expect("Error decoding CapabilitiesResponse");
                 Self::CapabilitiesResponse(msg)
             }
+            ("/influxdata.platform.storage.Storage/TagKeys", Request) => {
+                let msg = TagKeysRequest::decode(bytes)
+                    .expect("Error decoding TagKeysRequest");
+                Self::TagKeysRequest(msg)
+            }
+            ("/influxdata.platform.storage.Storage/TagValues", Request) => {
+                let msg = TagValuesRequest::decode(bytes)
+                    .expect("Error decoding TagValuesRequest");
+                Self::TagValuesRequest(msg)
+            }
+            ("/influxdata.platform.storage.Storage/TagKeys", Response) |
+            ("/influxdata.platform.storage.Storage/TagValues", Response) => {
+                let msg = StringValuesResponse::decode(bytes).expect("Error decoding StringValuesResponse");
+                Self::StringValuesResponse(msg)
+            },
             ("/influxdata.platform.storage.Storage/ReadWindowAggregate", Request) => {
                 let msg = ReadWindowAggregateRequest::decode(bytes)
                     .expect("Error decoding ReadWindowAggregateRequest");
