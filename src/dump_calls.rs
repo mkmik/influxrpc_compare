@@ -6,7 +6,7 @@ use std::{
     time::Instant,
 };
 
-use crate::{entries::Entries, error::Result, path::LogIterator, calls::Calls};
+use crate::{calls::Calls, entries::Entries, error::Result, path::LogIterator};
 
 pub struct DumpCalls {
     start_path: PathBuf,

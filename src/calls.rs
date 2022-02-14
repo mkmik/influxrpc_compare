@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::{call::{Call, CallBuilder}, entry::Entry};
+use crate::{call::Call, entry::Entry};
 
 /// Group `Entries` into logical gRPC calls
 ///
@@ -23,28 +23,36 @@ impl Calls {
     }
 }
 
-impl <A: Into<Entry>> FromIterator<A> for Calls {
+impl<A: Into<Entry>> FromIterator<A> for Calls {
     fn from_iter<T: IntoIterator<Item = A>>(iter: T) -> Self {
+        let builders =
+            iter.into_iter()
+                .fold(BTreeMap::<u64, Call>::new(), |mut builders, entry| {
+                    let Entry {
+                        timestamp,
+                        call_id,
+                        sequence_id_within_call,
+                        event_type,
+                        logger,
+                        payload_truncated,
+                        peer,
+                        payload,
+                    } = entry.into();
 
-        let builders = iter
-            .into_iter()
-            .fold(BTreeMap::<u64, CallBuilder>::new(), |mut builders, entry| {
-                let entry = entry.into();
-                let builder = builders.entry(entry.call_id)
-                    .or_insert_with(|| CallBuilder::new(entry.call_id));
+                    assert!(!payload_truncated, "truncated payloads not handled yet");
 
-                // update based on the type of entry
-                // match entry {
+                    let builder = builders
+                        .entry(call_id)
+                        .or_insert_with(|| Call::new(call_id))
+                        .timestamp(timestamp);
 
-                // };
+                    // };
 
-                builders
-            });
+                    builders
+                });
 
-        let calls = builders.into_values().map(|b| b.build()).collect();
+        let calls = builders.into_values().collect();
 
-        Self {
-            calls
-        }
+        Self { calls }
     }
 }
