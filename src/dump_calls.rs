@@ -2,7 +2,8 @@
 
 use std::{
     io::Write,
-    path::{Path, PathBuf}, time::Instant,
+    path::{Path, PathBuf},
+    time::Instant,
 };
 
 use crate::{entries::Entries, error::Result, path::LogIterator};
@@ -50,20 +51,21 @@ impl DumpCalls {
 
         // split them into Ok and Errors
         let (ok_entries, err_entries): (Vec<_>, Vec<_>) = entries
-            .map(|result| {
-                match result {
-                    Ok(entry) => (Some(entry), None),
-                    Err(msg) => (None, Some(msg)),
-                }
+            .map(|result| match result {
+                Ok(entry) => (Some(entry), None),
+                Err(msg) => (None, Some(msg)),
             })
             .unzip();
 
         let ok_entries: Vec<_> = ok_entries.into_iter().filter_map(|s| s).collect();
         let err_entries: Vec<_> = err_entries.into_iter().filter_map(|s| s).collect();
 
-
-        println!("Read {} ok entries and {} err entries in {:?}",
-                 ok_entries.len(), err_entries.len(), Instant::now() - start);
+        println!(
+            "Read {} ok entries and {} err entries in {:?}",
+            ok_entries.len(),
+            err_entries.len(),
+            Instant::now() - start
+        );
         Ok(())
     }
 }

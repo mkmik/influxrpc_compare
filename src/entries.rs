@@ -4,7 +4,7 @@ use bytes::Bytes;
 
 use crate::{entry::Entry, error::Result};
 
-/// decode GrpcLogEntry from files
+/// decode Raw GrpcLogEntry from files
 ///
 /// To use:
 /// ```
@@ -107,9 +107,10 @@ impl Iterator for LengthDelimitedRecords {
         if next_offset > (self.bytes.len() - 1) {
             return Some(Err(format!(
                 "Next offset {} is past end of file {}",
-                next_offset, self.bytes.len() -1
+                next_offset,
+                self.bytes.len() - 1
             )
-                            .into()));
+            .into()));
         }
 
         let record = self.bytes.slice(current_offset..next_offset);

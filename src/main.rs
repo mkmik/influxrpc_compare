@@ -1,9 +1,11 @@
+mod call;
+mod calls;
+mod dump_calls;
 mod dump_entries;
 mod entries;
 mod entry;
 mod error;
 mod path;
-mod dump_calls;
 
 use std::{io::stdout, path::PathBuf};
 
@@ -36,7 +38,6 @@ struct DumpEntries {
     /// Search path for grpc log files
     path: PathBuf,
 }
-
 
 #[derive(Parser, Debug)]
 struct DumpCalls {

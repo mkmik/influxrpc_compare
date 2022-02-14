@@ -43,13 +43,11 @@ impl Iterator for RecursiveDirectoryIterator {
     }
 }
 
-
 /// Recursively find all files that look like they could contain gRPC logs
 
 pub struct LogIterator {
-    inner: RecursiveDirectoryIterator
+    inner: RecursiveDirectoryIterator,
 }
-
 
 impl LogIterator {
     pub fn new(path: impl Into<PathBuf>) -> Self {
@@ -65,7 +63,6 @@ impl Iterator for LogIterator {
         loop {
             let p = self.inner.next()?;
 
-
             // skip anything without extension
             let extension = if let Some(extension) = p.extension() {
                 extension.to_string_lossy()
@@ -74,10 +71,8 @@ impl Iterator for LogIterator {
             };
 
             if extension == "txt" {
-                return Some(p)
+                return Some(p);
             }
         }
     }
-
-
 }
