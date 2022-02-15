@@ -16,9 +16,11 @@ use clap::Parser;
 /// contain requests / responses in the influxdb storage gRPC format.
 /// These files are typically named something like grpcgo_binarylog_2709101216.txt
 ///
-/// # Example (dump contents of logs in a directory):
-///
+/// # Example (dump raw log entries in all .txt files found in):
 /// influxrpc_compare dump-entries --path  /path/to/dumps
+///
+/// # Example (dump reconstructed calls from logs in all .txt files found in):
+/// influxrpc_compare dump-calls --path  /path/to/dumps
 ///
 /// # Reference
 ///
