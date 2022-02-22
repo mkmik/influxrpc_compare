@@ -26,3 +26,11 @@ impl From<String> for Error {
         Self { msg }
     }
 }
+
+impl From<&'static str> for Error {
+    fn from(msg: &'static str) -> Self {
+        Self {
+            msg: msg.to_string(),
+        }
+    }
+}

@@ -86,12 +86,18 @@ fn main() {
         }
         InfluxRpcCompare::DumpCalls(dump) => {
             let mut dc = dump_calls::DumpCalls::new(dump.input_path);
-            match dump.format {
-                CallFormat::Pretty => dc.dump(&mut stdout()).expect("Error dumping calls"),
-                CallFormat::Binary => todo!(),
+            let res = match dump.format {
+                CallFormat::Pretty => match dc.process() {
+                    Ok(calls) => dc.write_calls_pretty(calls, &mut stdout()),
+                    Err(e) => Err(e),
+                },
+                CallFormat::Binary => Err("unimplemented".into()),
+            };
+
+            match res {
+                Ok(_) => println!("Completed successfully"),
+                Err(e) => eprintln!("{}", e),
             }
         }
     };
-
-    println!("Done");
 }

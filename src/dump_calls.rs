@@ -20,31 +20,28 @@ impl DumpCalls {
         Self { start_path }
     }
 
-    pub fn dump<W: Write>(&mut self, out: &mut W) -> Result<()> {
-        writeln!(
-            out,
-            "Attempt to dump gRPC frames from all .txt files starting at {:?}",
+    pub fn process(&mut self) -> Result<Calls> {
+        println!(
+            "Attempt to process gRPC frames from all .txt files starting at {:?}",
             self.start_path
-        )?;
+        );
 
         let paths = LogIterator::new(self.start_path.clone());
-
-        for p in paths {
-            self.dump_path(out, &p)?;
+        let mut call_res = Calls::default();
+        for path in paths {
+            let calls = self.process_path(&path)?;
+            call_res.extend_from_other(calls);
         }
-        Ok(())
+
+        Ok(call_res)
     }
 
-    pub fn dump_path<W: Write>(&self, out: &mut W, p: &Path) -> Result<()> {
-        //println!("path: {:?}", p);
-        println!("Attempting to dump {:?}", p);
+    fn process_path(&self, p: &Path) -> Result<Calls> {
+        println!("Processing {:?}", p);
 
         let entries = match Entries::try_new(p) {
             Ok(entries) => entries,
-            Err(e) => {
-                writeln!(out, "Error reading {:?}: {}", p, e)?;
-                return Ok(());
-            }
+            Err(e) => return Err(format!("Error reading {:?}: {}", p, e).into()),
         };
 
         let start = Instant::now();
@@ -59,22 +56,25 @@ impl DumpCalls {
 
         let ok_entries: Vec<_> = ok_entries.into_iter().flatten().collect();
 
-        write!(
-            out,
+        println!(
             "Read {} ok entries and {} err entries in {:?}",
             ok_entries.len(),
             err_entries.into_iter().flatten().count(),
             Instant::now() - start
-        )?;
+        );
 
         // collect into calls
         let calls: Calls = ok_entries.into_iter().collect();
-        writeln!(out, "Found {} calls", calls.len())?;
+        println!("Found {} calls", calls.len());
+        Ok(calls)
+    }
 
+    pub fn write_calls_pretty<W>(&self, calls: Calls, out: &mut W) -> Result<()>
+    where
+        W: Write,
+    {
         for call in calls.iter() {
             writeln!(out, "{}", call)?;
-            //writeln!(out, "  request: {:?}", call.request)?;
-            //writeln!(out, "  response: {:?}", call.response)?;
         }
 
         // full debug dump
@@ -90,12 +90,13 @@ impl DumpCalls {
                 writeln!(out, "Error call: {}", call)?;
             }
 
-            if call
+            let rpc_method = call
                 .method_name
                 .as_ref()
                 .map(|method_name| method_name != "/influxdata.platform.storage.Storage/Offsets")
-                .unwrap_or(false)
-            {
+                .unwrap_or(false);
+
+            if rpc_method {
                 writeln!(out, "Non storage offset call:\n  {}", call)?;
                 writeln!(out, "  request: {:?}", call.request)?;
                 writeln!(out, "  response: {:?}", call.response)?;

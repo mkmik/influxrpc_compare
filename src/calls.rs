@@ -16,7 +16,7 @@ use crate::{
 ///   // do awesome stuff
 /// }
 /// ```
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub struct Calls {
     /// Calls that are build from the overall records
     calls: Vec<Call>,
@@ -29,6 +29,11 @@ impl Calls {
 
     pub fn iter(&self) -> impl Iterator<Item = &Call> {
         self.calls.iter()
+    }
+
+    // appends `other` into a new [`Calls`].
+    pub fn extend_from_other(&mut self, other: Self) {
+        self.calls.extend(other.calls.into_iter());
     }
 }
 
