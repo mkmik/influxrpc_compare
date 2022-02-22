@@ -58,13 +58,13 @@ impl Display for Call {
         if let Some(start_time) = &self.start_time {
             write!(f, "{}-", start_time)?;
         } else {
-            write!(f, "{}-", "")?;
+            write!(f, "-")?;
         };
 
         if let Some(end_time) = &self.end_time {
             write!(f, "{}", end_time)?;
         } else {
-            write!(f, "{}", "??")?;
+            write!(f, "??")?;
         };
 
         write!(f, "]")?;
@@ -76,14 +76,8 @@ impl Display for Call {
         write!(
             f,
             " {} --> {}",
-            self.authority
-                .as_ref()
-                .map(|s| s.as_str())
-                .unwrap_or("<UNKNOWN>"),
-            self.peer
-                .as_ref()
-                .map(|s| s.as_str())
-                .unwrap_or("<UNKNOWN>")
+            self.authority.as_deref().unwrap_or("<UNKNOWN>"),
+            self.peer.as_deref().unwrap_or("<UNKNOWN>")
         )?;
 
         Ok(())
@@ -105,13 +99,13 @@ impl Call {
                 .start_time
                 .take()
                 .map(|ts| ts.min(timestamp))
-                .or_else(|| Some(timestamp));
+                .or(Some(timestamp));
 
             self.end_time = self
                 .end_time
                 .take()
                 .map(|ts| ts.max(timestamp))
-                .or_else(|| Some(timestamp));
+                .or(Some(timestamp));
         }
         self
     }
@@ -125,7 +119,7 @@ impl Call {
                     assert_eq!(existing_peer, peer, "Unexpectedly different peer in log");
                     existing_peer
                 })
-                .or_else(|| Some(peer));
+                .or(Some(peer));
         }
 
         self
