@@ -6,7 +6,12 @@ use std::{
     time::Instant,
 };
 
-use crate::{calls::Calls, entries::Entries, error::Result, path::LogIterator};
+use crate::{
+    calls::Calls,
+    entries::Entries,
+    error::{Error, Result},
+    path::LogIterator,
+};
 
 pub struct DumpCalls {
     start_path: PathBuf,
@@ -65,7 +70,12 @@ impl DumpCalls {
 
         // collect into calls
         let calls: Calls = ok_entries.into_iter().collect();
+        let call_len = calls.len();
         println!("Found {} calls", calls.len());
+
+        // Filter the "Offsets" calls out
+        let calls = calls.filter_offset_calls();
+        println!("Filtered {} offset calls", call_len - calls.len());
         Ok(calls)
     }
 
@@ -104,5 +114,11 @@ impl DumpCalls {
         }
 
         Ok(())
+    }
+
+    pub fn write_calls_binary(&self, calls: Calls, path: &str) -> Result<()> {
+        use std::fs::File;
+        let contents = File::create(path).map_err(|e| Error::from(e.to_string()))?;
+        bincode::serialize_into(contents, &calls).map_err(|e| Error::from(e.to_string()))
     }
 }

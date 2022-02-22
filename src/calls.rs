@@ -35,6 +35,22 @@ impl Calls {
     pub fn extend_from_other(&mut self, other: Self) {
         self.calls.extend(other.calls.into_iter());
     }
+
+    // consumes self and returns a new `Calls` with offset calls filtered out.
+    pub fn filter_offset_calls(self) -> Self {
+        Self {
+            calls: self
+                .calls
+                .into_iter()
+                .filter(|c| {
+                    c.method_name
+                        .as_ref()
+                        .map(|method| !method.eq("/influxdata.platform.storage.Storage/Offsets"))
+                        .unwrap_or(false)
+                })
+                .collect(),
+        }
+    }
 }
 
 impl<A: Into<Entry>> FromIterator<A> for Calls {
