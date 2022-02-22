@@ -8,7 +8,7 @@ mod error;
 mod methods;
 mod path;
 
-use std::{io::stdout, path::PathBuf};
+use std::{io::stdout, path::PathBuf, str::FromStr};
 
 use clap::Parser;
 
@@ -44,9 +44,35 @@ struct DumpEntries {
 
 #[derive(Parser, Debug)]
 struct DumpCalls {
-    #[clap(long, parse(from_os_str))]
+    #[clap(long = "in", parse(from_os_str))]
     /// Search path for grpc log files
-    path: PathBuf,
+    input_path: PathBuf,
+
+    #[clap(long = "out", parse(from_os_str))]
+    /// optional output path for binary formatted Calls
+    output_path: Option<PathBuf>,
+
+    #[clap(long)]
+    /// Format to emit processed gRPC calls
+    format: CallFormat,
+}
+
+#[derive(Debug)]
+enum CallFormat {
+    Pretty,
+    Binary,
+}
+
+impl FromStr for CallFormat {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "pretty" => Ok(Self::Pretty),
+            "bin" => Ok(Self::Binary),
+            _ => Err("supported formats: {pretty, bin}".to_string()),
+        }
+    }
 }
 
 fn main() {
@@ -59,9 +85,11 @@ fn main() {
                 .expect("Error dumping entries");
         }
         InfluxRpcCompare::DumpCalls(dump) => {
-            dump_calls::DumpCalls::new(dump.path)
-                .dump(&mut stdout())
-                .expect("Error dumping calls");
+            let mut dc = dump_calls::DumpCalls::new(dump.input_path);
+            match dump.format {
+                CallFormat::Pretty => dc.dump(&mut stdout()).expect("Error dumping calls"),
+                CallFormat::Binary => todo!(),
+            }
         }
     };
 
