@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     call::Call,
     entry::{ClientHeader, Entry, EventType, Logger, Message, Payload, ServerHeader, Trailer},
@@ -14,7 +16,7 @@ use crate::{
 ///   // do awesome stuff
 /// }
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Calls {
     /// Calls that are build from the overall records
     calls: Vec<Call>,
