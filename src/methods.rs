@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use generated_types::influxdata::platform::storage::{
-    CapabilitiesResponse, OffsetsResponse, ReadResponse, ReadWindowAggregateRequest,
-    StringValuesResponse, TagKeysRequest, TagValuesRequest,
+    CapabilitiesResponse, OffsetsResponse, ReadFilterRequest, ReadGroupRequest, ReadResponse,
+    ReadWindowAggregateRequest, StringValuesResponse, TagKeysRequest, TagValuesRequest,
 };
 use serde::{Deserialize, Serialize};
 
@@ -29,6 +29,12 @@ pub enum Method {
     CapabilitiesRequest(),
     /// Response: `/influxdata.platform.storage.Storage/Capabilities`
     CapabilitiesResponse(CapabilitiesResponse),
+
+    /// Request `/influxdata.platform.storage.Storage/ReadFilter`
+    ReadFilterRequest(ReadFilterRequest),
+
+    /// Request `/influxdata.platform.storage.Storage/ReadGroup`
+    ReadGroupRequest(ReadGroupRequest),
 
     /// Request `/influxdata.platform.storage.Storage/ReadWindowAggregate`
     ReadWindowAggregateRequest(ReadWindowAggregateRequest),
@@ -97,7 +103,19 @@ impl Method {
                     .expect("Error decoding ReadWindowAggregateRequest");
                 Self::ReadWindowAggregateRequest(msg)
             }
-            ("/influxdata.platform.storage.Storage/ReadWindowAggregate", Response) => {
+            ("/influxdata.platform.storage.Storage/ReadFilter", Request) => {
+                let msg = ReadFilterRequest::decode(bytes)
+                    .expect("Error decoding ReadWindowAggregateRequest");
+                Self::ReadFilterRequest(msg)
+            }
+            ("/influxdata.platform.storage.Storage/ReadGroup", Request) => {
+                let msg = ReadGroupRequest::decode(bytes)
+                    .expect("Error decoding ReadWindowAggregateRequest");
+                Self::ReadGroupRequest(msg)
+            }
+            ("/influxdata.platform.storage.Storage/ReadFilter", Response)
+            | ("/influxdata.platform.storage.Storage/ReadGroup", Response)
+            | ("/influxdata.platform.storage.Storage/ReadWindowAggregate", Response) => {
                 let msg = ReadResponse::decode(bytes).expect("Error decoding ReadResponse");
                 Self::ReadResponse(msg)
             }
