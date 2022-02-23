@@ -1,13 +1,14 @@
 use std::{collections::HashMap, fmt::Display};
 
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 use crate::methods::{Method, MethodType};
 
 /// Represents a logical gRPC call extracted from a chain of Entrys
 ///
 ///
-#[derive(Default, Debug, Clone)]
+#[derive(Clone, Serialize, Deserialize, Default, Debug)]
 pub struct Call {
     pub id: u64,
 

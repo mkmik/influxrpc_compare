@@ -3,6 +3,7 @@ use generated_types::influxdata::platform::storage::{
     CapabilitiesResponse, OffsetsResponse, ReadResponse, ReadWindowAggregateRequest,
     StringValuesResponse, TagKeysRequest, TagValuesRequest,
 };
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy)]
 pub enum MethodType {
@@ -11,7 +12,7 @@ pub enum MethodType {
 }
 
 /// All the GRPC methods this code knows how to decode to native form
-#[derive(Debug, Clone)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum Method {
     /// `/influxdata.platform.storage.Storage/Offsets`
     /// No special decoding (yet)

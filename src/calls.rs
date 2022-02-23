@@ -1,9 +1,14 @@
 use std::collections::BTreeMap;
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     call::Call,
     entry::{ClientHeader, Entry, EventType, Logger, Message, Payload, ServerHeader, Trailer},
 };
+
+// gRPC header key used to identify source org ID for conversation
+const INFLUX_ORG_ID_HEADER_NAME: &str = "influx-org-id";
 
 /// Group `Entries` into logical gRPC calls
 ///
@@ -14,7 +19,7 @@ use crate::{
 ///   // do awesome stuff
 /// }
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub struct Calls {
     /// Calls that are build from the overall records
     calls: Vec<Call>,
@@ -27,6 +32,30 @@ impl Calls {
 
     pub fn iter(&self) -> impl Iterator<Item = &Call> {
         self.calls.iter()
+    }
+
+    // appends `other` into a new [`Calls`].
+    pub fn extend_from_other(&mut self, other: Self) {
+        self.calls.extend(other.calls.into_iter());
+    }
+
+    // Filters calls for Offsets from the collection.
+    pub fn filter_offset_calls(&mut self) {
+        self.calls.retain(|c| {
+            c.method_name
+                .as_ref()
+                .map(|method| !method.eq("/influxdata.platform.storage.Storage/Offsets"))
+                .unwrap_or(false)
+        })
+    }
+
+    // Filters calls not belonging to the provided org_id from the collection.
+    pub fn filter_by_org_id(&mut self, org_id: &str) {
+        self.calls
+            .retain(|c| match c.client_headers.get(INFLUX_ORG_ID_HEADER_NAME) {
+                Some(id) => id.as_str() == org_id,
+                None => false,
+            });
     }
 }
 
