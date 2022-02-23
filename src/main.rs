@@ -95,7 +95,7 @@ fn main() {
             }
 
             let mut dc = dump_calls::DumpCalls::new(dump.input_path);
-            let calls = match dc.process() {
+            let mut calls = match dc.process() {
                 Ok(calls) => calls,
                 Err(e) => {
                     eprintln!("{}", e);
@@ -104,22 +104,19 @@ fn main() {
             };
 
             // Filter offset calls out
-            let calls = calls.filter_offset_calls();
+            calls.filter_offset_calls();
             println!("Filtered offset calls. {:?} calls remaining", calls.len());
 
             // Filter by org_id
-            let calls = if dump.org_filter.is_empty() {
-                calls
-            } else {
+            if !dump.org_filter.is_empty() {
                 let org_filter = dump.org_filter.as_str();
-                let calls = calls.filter_by_org_id(org_filter);
+                calls.filter_by_org_id(org_filter);
                 println!(
                     "Filtered calls not for org id {}. {:?} calls remaining",
                     org_filter,
                     calls.len()
                 );
-                calls
-            };
+            }
 
             let res = match dump.format {
                 CallFormat::Pretty => dc.write_calls_pretty(calls, &mut stdout()),

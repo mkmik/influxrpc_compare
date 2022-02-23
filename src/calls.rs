@@ -39,34 +39,23 @@ impl Calls {
         self.calls.extend(other.calls.into_iter());
     }
 
-    // Consumes self and returns a new [`Calls`] with offset calls filtered out.
-    pub fn filter_offset_calls(self) -> Self {
-        Self {
-            calls: self
-                .calls
-                .into_iter()
-                .filter(|c| {
-                    c.method_name
-                        .as_ref()
-                        .map(|method| !method.eq("/influxdata.platform.storage.Storage/Offsets"))
-                        .unwrap_or(false)
-                })
-                .collect(),
-        }
+    // Filters calls for Offsets from the collection.
+    pub fn filter_offset_calls(&mut self) {
+        self.calls.retain(|c| {
+            c.method_name
+                .as_ref()
+                .map(|method| !method.eq("/influxdata.platform.storage.Storage/Offsets"))
+                .unwrap_or(false)
+        })
     }
 
-    // Consumes self and returns a new [`Calls`] with calls not belonging to the provided org_id filtered out.
-    pub fn filter_by_org_id(self, org_id: &str) -> Self {
-        Self {
-            calls: self
-                .calls
-                .into_iter()
-                .filter(|c| match c.client_headers.get(INFLUX_ORG_ID_HEADER_NAME) {
-                    Some(id) => id.as_str() == org_id,
-                    None => false,
-                })
-                .collect(),
-        }
+    // Filters calls not belonging to the provided org_id from the collection.
+    pub fn filter_by_org_id(&mut self, org_id: &str) {
+        self.calls
+            .retain(|c| match c.client_headers.get(INFLUX_ORG_ID_HEADER_NAME) {
+                Some(id) => id.as_str() == org_id,
+                None => false,
+            });
     }
 }
 
