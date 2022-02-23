@@ -55,6 +55,10 @@ struct DumpCalls {
     #[clap(long)]
     /// Format to emit processed gRPC calls
     format: CallFormat,
+
+    #[clap(long, default_value = "")]
+    /// optional filter on org_id
+    org_filter: String,
 }
 
 #[derive(Debug)]
@@ -97,6 +101,24 @@ fn main() {
                     eprintln!("{}", e);
                     return;
                 }
+            };
+
+            // Filter offset calls out
+            let calls = calls.filter_offset_calls();
+            println!("Filtered offset calls. {:?} calls remaining", calls.len());
+
+            // Filter by org_id
+            let calls = if dump.org_filter.is_empty() {
+                calls
+            } else {
+                let org_filter = dump.org_filter.as_str();
+                let calls = calls.filter_by_org_id(org_filter);
+                println!(
+                    "Filtered calls not for org id {}. {:?} calls remaining",
+                    org_filter,
+                    calls.len()
+                );
+                calls
             };
 
             let res = match dump.format {

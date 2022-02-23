@@ -7,6 +7,9 @@ use crate::{
     entry::{ClientHeader, Entry, EventType, Logger, Message, Payload, ServerHeader, Trailer},
 };
 
+// gRPC header key used to identify source org ID for conversation
+const INFLUX_ORG_ID_HEADER_NAME: &str = "influx-org-id";
+
 /// Group `Entries` into logical gRPC calls
 ///
 /// To use:
@@ -36,7 +39,7 @@ impl Calls {
         self.calls.extend(other.calls.into_iter());
     }
 
-    // consumes self and returns a new `Calls` with offset calls filtered out.
+    // Consumes self and returns a new [`Calls`] with offset calls filtered out.
     pub fn filter_offset_calls(self) -> Self {
         Self {
             calls: self
@@ -47,6 +50,20 @@ impl Calls {
                         .as_ref()
                         .map(|method| !method.eq("/influxdata.platform.storage.Storage/Offsets"))
                         .unwrap_or(false)
+                })
+                .collect(),
+        }
+    }
+
+    // Consumes self and returns a new [`Calls`] with calls not belonging to the provided org_id filtered out.
+    pub fn filter_by_org_id(self, org_id: &str) -> Self {
+        Self {
+            calls: self
+                .calls
+                .into_iter()
+                .filter(|c| match c.client_headers.get(INFLUX_ORG_ID_HEADER_NAME) {
+                    Some(id) => id.as_str() == org_id,
+                    None => false,
                 })
                 .collect(),
         }

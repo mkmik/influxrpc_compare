@@ -70,12 +70,8 @@ impl DumpCalls {
 
         // collect into calls
         let calls: Calls = ok_entries.into_iter().collect();
-        let call_len = calls.len();
         println!("Found {} calls", calls.len());
 
-        // Filter the "Offsets" calls out
-        let calls = calls.filter_offset_calls();
-        println!("Filtered {} offset calls", call_len - calls.len());
         Ok(calls)
     }
 
