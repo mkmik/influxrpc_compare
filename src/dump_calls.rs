@@ -57,14 +57,13 @@ impl DumpCalls {
             })
             .unzip();
 
-        let ok_entries: Vec<_> = ok_entries.into_iter().filter_map(|s| s).collect();
-        let err_entries: Vec<_> = err_entries.into_iter().filter_map(|s| s).collect();
+        let ok_entries: Vec<_> = ok_entries.into_iter().flatten().collect();
 
         write!(
             out,
             "Read {} ok entries and {} err entries in {:?}",
             ok_entries.len(),
-            err_entries.len(),
+            err_entries.into_iter().flatten().count(),
             Instant::now() - start
         )?;
 
