@@ -18,8 +18,10 @@ pub struct Call {
     /// decoded gRPC request message (depends on method_name)
     pub request: Option<Method>,
 
-    /// decoded gRPC response message (depends on method_name)
-    pub response: Option<Method>,
+    /// decoded gRPC response messages (depends on method_name)
+    /// Note: since a conversation can contain multiple messages (e.g., multiple
+    /// Server messages) there can be multiple responses for a single `Call`.
+    pub responses: Vec<Method>,
 
     /// first observed timestamp of this call
     pub start_time: Option<DateTime<Utc>>,
@@ -155,12 +157,6 @@ impl Call {
     }
 
     pub fn with_response_data(&mut self, method_data: Vec<u8>) -> &mut Self {
-        assert!(
-            self.response.is_none(),
-            "Already have response: {:?}",
-            self.response
-        );
-
         let method = if let Some(method_name) = &self.method_name {
             Method::new(method_name, method_data, MethodType::Response)
         } else {
@@ -168,7 +164,7 @@ impl Call {
             panic!("Got method data before method_name, so don't know how to decode it");
         };
 
-        self.response = Some(method);
+        self.responses.push(method);
         self
     }
 

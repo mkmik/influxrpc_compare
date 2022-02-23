@@ -105,7 +105,7 @@ impl DumpCalls {
             if rpc_method {
                 writeln!(out, "Non storage offset call:\n  {}", call)?;
                 writeln!(out, "  request: {:?}", call.request)?;
-                writeln!(out, "  response: {:?}", call.response)?;
+                writeln!(out, "  response: {:?}", call.responses)?;
             }
         }
 
